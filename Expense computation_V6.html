@@ -183,3 +183,135 @@
 </script>
 </body>
 </html>
+<script>
+function exportToExcel() {
+    // Create a new workbook and worksheet
+    let wb = XLSX.utils.book_new();
+    
+    // Gross Salary
+    let grossSalary = document.getElementById("grossSalary").value || "0";
+    let data = [["Kenyan Salary & Expense Report"], [], ["Gross Salary", "KES " + grossSalary], []];
+
+    // Deductions Table
+    data.push(["Deductions"]);
+    data.push(["Deduction", "Amount (KES)"]);
+    let deductions = [
+        ["NSSF", document.getElementById('nssf')?.textContent.trim() || "0"],
+        ["SHIF", document.getElementById('shif')?.textContent.trim() || "0"],
+        ["AHL", document.getElementById('ahl')?.textContent.trim() || "0"],
+        ["Pension", document.getElementById('pension')?.textContent.trim() || "0"],
+        ["PAYE", document.getElementById('paye')?.textContent.trim() || "0"]
+    ];
+    data = data.concat(deductions);
+    data.push([]);
+
+    // Net Salary
+    let netSalary = document.getElementById("netSalary")?.textContent.trim() || "0";
+    data.push(["Net Salary", "KES " + netSalary]);
+    data.push([]);
+
+    // Expenses Table
+    data.push(["Expenses"]);
+    data.push(["Expense", "Amount (KES)"]);
+    let rows = document.querySelectorAll("#expenseTable tbody tr");
+    rows.forEach(row => {
+        let expenseName = row.cells[0].textContent.trim();
+        let expenseAmount = row.cells[1].querySelector("input")?.value.trim() || "0";
+        data.push([expenseName, expenseAmount]);
+    });
+    data.push([]);
+
+    // Remaining Balance
+    let balance = document.getElementById("balance")?.textContent.trim() || "0";
+    data.push(["Remaining Balance", "KES " + balance]);
+
+    // Convert data to a worksheet and append to workbook
+    let ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "Salary Report");
+
+    // Export the workbook to Excel file
+    XLSX.writeFile(wb, "Salary_Expense_Report.xlsx");
+}
+</script>
+
+<!-- Add this button to your HTML -->
+<button id="exportPDF">Export to PDF</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("exportPDF").addEventListener("click", exportToPDF);
+});
+
+function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Kenyan Salary & Expense Report", 60, 15);
+
+    // Gross Salary
+    let grossSalary = document.getElementById("grossSalary").value || "0";
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Gross Salary: KES " + grossSalary, 14, 30);
+
+    // Deductions Table
+    let deductions = [
+        ["NSSF", document.getElementById('nssf')?.textContent.trim() || "0"],
+        ["SHIF", document.getElementById('shif')?.textContent.trim() || "0"],
+        ["AHL", document.getElementById('ahl')?.textContent.trim() || "0"],
+        ["Pension", document.getElementById('pension')?.textContent.trim() || "0"],
+        ["PAYE", document.getElementById('paye')?.textContent.trim() || "0"]
+    ];
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Deductions", 14, 40);
+
+    doc.autoTable({
+        startY: 45,
+        head: [["Deduction", "Amount (KES)"]],
+        body: deductions,
+        theme: "grid",
+        styles: { fontSize: 10 }
+    });
+
+    // Net Salary
+    let netSalary = document.getElementById("netSalary")?.textContent.trim() || "0";
+    doc.setFont("helvetica", "bold");
+    doc.text("Net Salary: KES " + netSalary, 14, doc.autoTable.previous.finalY + 10);
+
+    // Expenses Table
+    let expenses = [];
+    let rows = document.querySelectorAll("#expenseTable tbody tr");
+
+    rows.forEach((row) => {
+        let expenseName = row.cells[0].textContent.trim();
+        let expenseAmount = row.cells[1].querySelector("input")?.value.trim() || "0";
+        expenses.push([expenseName, expenseAmount]);
+    });
+
+    doc.setFontSize(12);
+    doc.text("Expenses", 14, doc.autoTable.previous.finalY + 20);
+
+    doc.autoTable({
+        startY: doc.autoTable.previous.finalY + 25,
+        head: [["Expense", "Amount (KES)"]],
+        body: expenses,
+        theme: "grid",
+        styles: { fontSize: 10 }
+    });
+
+    // Remaining Balance
+    let balance = document.getElementById("balance")?.textContent.trim() || "0";
+    doc.setFont("helvetica", "bold");
+    doc.text("Remaining Balance: KES " + balance, 14, doc.autoTable.previous.finalY + 10);
+
+    // Save PDF
+    doc.save("Salary_Expense_Report.pdf");
+}
+</script>
