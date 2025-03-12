@@ -120,13 +120,37 @@
 <script>
     function calculateNetPay() {
         let gross = parseFloat(document.getElementById('grossSalary').value) || 0;
+       
         let nssf = Math.min(0.06 * (gross > 72000 ? 72000 : gross), 8640);
         let shif = Math.max(gross * 0.0275, 300);
         let ahl = gross * 0.015;
         let pension = gross * 0.05;
+       
         let taxableIncome = gross - nssf - ahl - pension;
-        let paye = taxableIncome > 24000 ? (taxableIncome - 24000) * 0.10 : 0;
+       
+        let paye = 0;
+        if (taxableIncome > 800000) {
+            paye += (taxableIncome - 800000) * 0.35;
+            taxableIncome = 800000;
+        }
+        if (taxableIncome > 500000) {
+            paye += (taxableIncome - 500000) * 0.325;
+            taxableIncome = 500000;
+        }
+        if (taxableIncome > 46767) {
+            paye += (taxableIncome - 46767) * 0.30;
+            taxableIncome = 46767;
+        }
+        if (taxableIncome > 32333) {
+            paye += (taxableIncome - 32333) * 0.25;
+            taxableIncome = 32333;
+        }
+        if (taxableIncome > 24000) {
+            paye += (taxableIncome - 24000) * 0.10;
+        }
+       
         let net = gross - (nssf + shif + ahl + pension + paye);
+       
         document.getElementById('nssf').textContent = nssf.toFixed(2);
         document.getElementById('shif').textContent = shif.toFixed(2);
         document.getElementById('ahl').textContent = ahl.toFixed(2);
@@ -135,12 +159,15 @@
         document.getElementById('netSalary').textContent = net.toFixed(2);
         calculateBalance();
     }
+ 
     function calculateBalance() {
         let netSalary = parseFloat(document.getElementById('netSalary').textContent) || 0;
-        let totalExpenses = [...document.getElementsByClassName('expense')]
+        let totalExpenses = Array.from(document.getElementsByClassName('expense'))
             .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
-        document.getElementById('balance').textContent = (netSalary - totalExpenses).toFixed(2);
+        let balance = netSalary - totalExpenses;
+        document.getElementById('balance').textContent = balance.toFixed(2);
     }
+ 
     function addExpense() {
         let table = document.getElementById('expenseTable');
         let row = table.insertRow();
