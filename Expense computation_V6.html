@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kenyan Salary & Expense Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #F4F4F4;
+        color: #333;
+    }
+    .container {
+        max-width: 700px;
+        margin: 50px auto;
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h2, h3 {
+        text-align: center;
+        color: #124E66;
+    }
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+    input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+        vertical-align: middle;
+    }
+    th {
+        background: #124E66;
+        color: white;
+    }
+    .btn-container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .btn {
+        flex: 1;
+        padding: 12px;
+        margin: 5px;
+        cursor: pointer;
+        background: #124E66;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 16px;
+    }
+    .btn:hover {
+        background: #2E3944;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>My Expense Tracker</h2>
+    <label>Gross Salary (KES): </label>
+    <input type="number" id="grossSalary" oninput="calculateNetPay()" />
+
+    <h3>Deductions</h3>
+    <p><strong>NSSF:</strong> <span id="nssf">0</span></p>
+    <p><strong>SHIF:</strong> <span id="shif">0</span></p>
+    <p><strong>AHL:</strong> <span id="ahl">0</span></p>
+    <p><strong>Pension Contribution:</strong> <span id="pension">0</span></p>
+    <p><strong>PAYE:</strong> <span id="paye">0</span></p>
+    <h3>Net Salary: KES <span id="netSalary">0</span></h3>
+
+    <h3>Expenses</h3>
+    <table id="expenseTable">
+        <tr>
+            <th>Expense</th>
+            <th>Amount (KES)</th>
+        </tr>
+<tr><td>Rent/Mortgage</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Food/Groceries</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Medical Expenses</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Transport/Fuel</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Education/School Fees</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Tithes/offerings</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Clothings</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Welfare</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Internet</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Electricity</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+<tr><td>Other Expenses</td><td><input type="number" class="expense" oninput="calculateBalance()"></td></tr>
+    </table>
+    
+    <div class="btn-container">
+        <button class="btn" onclick="addExpense()">Add Expense</button>
+        <button class="btn" onclick="exportToExcel()">Export to Excel</button>
+        <button class="btn" onclick="exportToPDF()">Export to PDF</button>
+    </div>
+    
+    <h3>Remaining Balance: KES <span id="balance">0</span></h3>
+</div>
+<script>
+    function calculateNetPay() {
+        let gross = parseFloat(document.getElementById('grossSalary').value) || 0;
+        let nssf = Math.min(0.06 * (gross > 72000 ? 72000 : gross), 8640);
+        let shif = Math.max(gross * 0.0275, 300);
+        let ahl = gross * 0.015;
+        let pension = gross * 0.05;
+        let taxableIncome = gross - nssf - ahl - pension;
+        let paye = taxableIncome > 24000 ? (taxableIncome - 24000) * 0.10 : 0;
+        let net = gross - (nssf + shif + ahl + pension + paye);
+        document.getElementById('nssf').textContent = nssf.toFixed(2);
+        document.getElementById('shif').textContent = shif.toFixed(2);
+        document.getElementById('ahl').textContent = ahl.toFixed(2);
+        document.getElementById('pension').textContent = pension.toFixed(2);
+        document.getElementById('paye').textContent = paye.toFixed(2);
+        document.getElementById('netSalary').textContent = net.toFixed(2);
+        calculateBalance();
+    }
+    function calculateBalance() {
+        let netSalary = parseFloat(document.getElementById('netSalary').textContent) || 0;
+        let totalExpenses = [...document.getElementsByClassName('expense')]
+            .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+        document.getElementById('balance').textContent = (netSalary - totalExpenses).toFixed(2);
+    }
+    function addExpense() {
+        let table = document.getElementById('expenseTable');
+        let row = table.insertRow();
+        let cell1 = row.insertCell(0);
+        let cell2 = row.insertCell(1);
+        let expenseName = prompt("Enter expense name:");
+        if (expenseName) {
+            cell1.textContent = expenseName;
+            cell2.innerHTML = '<input type="number" class="expense" oninput="calculateBalance()">';
+        }
+        calculateBalance();
+    }
+</script>
+</body>
+</html>
